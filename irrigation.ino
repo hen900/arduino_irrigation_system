@@ -65,7 +65,7 @@ public:
     //delay(1000*3);
     //digitalWrite(relayNum, HIGH);
   }
-  void activatePump(){// while the soil is below the threshold, water for 15 seconds, turn off the relay, wait 1 minute and take another reading 
+  void activatePump(){// while the soil moisture is below the threshold, water for 20 seconds, turn off the relay, wait 3 minutes and take another reading 
     while(isLow()){ 
       digitalWrite(relayNum, LOW);
       delay(1000*20);
@@ -108,7 +108,7 @@ for(int i = 0; i< 4;i++) {
     //allTrays[i].test();
 }
 } 
-delay(1000*60*2);
+delay(1000*60*2); //Wait two minutes in between loops
 
 
 }
