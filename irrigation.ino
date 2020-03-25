@@ -5,15 +5,16 @@
 class tray {
 
 private:
-  int sensorNum;
-  int relayNum;
+  int sensorNum; // pin which moisture sensor is attached to
+  int relayNum; // pin which relay is attached to
   int moistValue1;
   int moistValue2;
-  int avgMoistValue;
-  int airValue;
-  int waterValue;
+  int avgMoistValue; 
+  int airValue; //moisture reading of air
+  int waterValue; //moisture reading of water
   int percentMoist;
-  int threshold;
+  int threshold; // lowest acceptable percent moisture 
+  int safetyCatch; // var defined to detect overlflow
 
   
 public:
@@ -27,7 +28,7 @@ public:
     waterValue = waterConstantInpt; // Reading sensor gives while submereged in water
    
     relayNum = relayInpt; // Pin number of the relay for the partcular tray
-    int moistValueSum = 0;
+    int safetyCatch = 0; // var defined to detect overlflow
   };
 
   void begin() { //Sets up relays and sensors
@@ -51,26 +52,42 @@ public:
 
     }
   };
-
-  void test(){
+  void emergencyShutoff() { // function to turn off the system to prevent water overflow. activates a buzzer every 3 seconds
+    digitalWrite(relayNum, HIGH); // deactivate pump 
+    while(true){ // loop forever to prevent more water from pumping!
+      Serial.print("Relay Number ");
+      Serial.print(relayNum);
+      Serial.println(" Emergency Shutoff");
+      tone(8,500 ,500); // plays a 500 Hz tone on pin 8 for 500 ms
+      delay(3000);
+    }
+  }
+  void test(){ // function just for testing and calibration purposes
     moistValue1 = analogRead(sensorNum);
     delay(1500);
     moistValue2=  analogRead(sensorNum);
     avgMoistValue=(moistValue1+moistValue2)/2; // two readings are taken 1.5 seconds apart and averaged
     percentMoist = map(avgMoistValue,airValue,waterValue,0,100); // map is utilized to define moisture as a percentage
-    Serial.print(sensorNum);
-    Serial.print(":");
-    Serial.println(percentMoist);
+    Serial.println(sensorNum);
+    Serial.print("% Moisture: ");
+    Serial.print(percentMoist);
+    Serial.print("Raw value: ");
+    Serial.println(avgMoistValue);
+    
     //digitalWrite(relayNum, LOW);
     //delay(1000*3);
     //digitalWrite(relayNum, HIGH);
   }
-  void activatePump(){// while the soil moisture is below the threshold, water for 20 seconds, turn off the relay, wait 3 minutes and take another reading 
+  void activatePump(){// while the soil is below the threshold, water for 15 seconds, turn off the relay, wait 1 minute and take another reading 
     while(isLow()){ 
+      if(safetyCatch > 10) { // if pump is activated more than 10 times in a row, initiate emergency shutoff
+        emergencyShutoff();
+      }
       digitalWrite(relayNum, LOW);
       delay(1000*20);
       digitalWrite(relayNum, HIGH);
       delay(1000*60*3);
+      safetyCatch++;
     }
 
   };
@@ -103,12 +120,12 @@ void loop() {
   //allTrays[3].test();
 
 for(int i = 0; i< 4;i++) {
+  
   if(allTrays[i].isLow()){
-   allTrays[i].activatePump();
-    //allTrays[i].test();
+    allTrays[i].activatePump();
 }
 } 
-delay(1000*60*2); //Wait two minutes in between loops
+delay(1000*60*2);
 
 
 }
